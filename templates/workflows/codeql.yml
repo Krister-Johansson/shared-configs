@@ -1,7 +1,7 @@
 # Thin caller for the shared CodeQL workflow. The triggers must live here
 # (cron cannot be defined in a reusable workflow).
-# Replace {{SHARED_CONFIGS_SHA}} / {{SHARED_CONFIGS_VERSION}} with the latest
-# shared-configs release (see AGENTS.md step 4).
+# The actual jobs live in Krister-Johansson/shared-configs; dependabot keeps
+# the pinned version fresh (pin set per AGENTS.md step 3).
 name: CodeQL
 
 on:
