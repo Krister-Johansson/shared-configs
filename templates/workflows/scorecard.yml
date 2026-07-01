@@ -24,6 +24,7 @@ jobs:
   scorecard:
     uses: Krister-Johansson/shared-configs/.github/workflows/scorecard.yml@{{SHARED_CONFIGS_SHA}} # {{SHARED_CONFIGS_VERSION}}
     permissions:
+      contents: read # job permissions replace read-all; the scan needs repo reads
       security-events: write # SARIF upload to code scanning
       id-token: write # publish results to the OpenSSF API (badge)
     secrets:

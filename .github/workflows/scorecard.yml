@@ -23,6 +23,9 @@ jobs:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     permissions:
+      # Job-level permissions replace the workflow default, so restate read access
+      # for the checkout and Scorecard's repo/API reads.
+      contents: read
       # Upload the SARIF result to the code-scanning dashboard.
       security-events: write
       # OIDC token used to publish results to the public OpenSSF API (powers the badge).
