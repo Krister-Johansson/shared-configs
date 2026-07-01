@@ -1,0 +1,4 @@
+# CodeRabbit — pulls the shared configuration for all Krister-Johansson repos.
+# Shared config: https://github.com/Krister-Johansson/shared-configs/blob/main/.coderabbit.yaml
+remote_config:
+  url: "https://raw.githubusercontent.com/Krister-Johansson/shared-configs/main/.coderabbit.yaml"

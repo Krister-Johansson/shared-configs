@@ -1,0 +1,25 @@
+# Thin caller for the shared CI workflow.
+# Replace {{SHARED_CONFIGS_SHA}} / {{SHARED_CONFIGS_VERSION}} with the latest
+# shared-configs release (see AGENTS.md step 4). Dependabot keeps the pin fresh.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: Krister-Johansson/shared-configs/.github/workflows/ci.yml@{{SHARED_CONFIGS_SHA}} # {{SHARED_CONFIGS_VERSION}}
+    with:
+      # node-versions: '["20", "22"]'   # default
+      run-lint: false # set true when the repo has a `lint` script
+      # post-test-scripts: "test:types attw"
+      # upload-coverage-artifact: true  # needed by a local coverage-comment job
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  # Repo-specific jobs (integration tests, PR coverage comments, ...) can live
+  # right here as sibling jobs — see prisma-extension-timescaledb for an example.

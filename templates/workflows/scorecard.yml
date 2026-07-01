@@ -1,0 +1,30 @@
+# Thin caller for the shared OpenSSF Scorecard workflow. The triggers must live
+# here (cron cannot be defined in a reusable workflow).
+# Replace {{SHARED_CONFIGS_SHA}} / {{SHARED_CONFIGS_VERSION}} with the latest
+# shared-configs release (see AGENTS.md step 4).
+name: Scorecard supply-chain security
+
+on:
+  # Re-run when branch-protection rules change (a Scorecard signal).
+  branch_protection_rule:
+  # Weekly, so the published score and README badge stay current.
+  schedule:
+    - cron: "27 7 * * 1"
+  push:
+    branches: [main]
+  # Allow re-scanning on demand (Actions tab → Run workflow).
+  workflow_dispatch:
+
+# Least-privilege by default; the reusable workflow's job elevates what it needs.
+# Do NOT add top-level env/defaults/write permissions — the Scorecard publish API
+# rejects workflows that have them.
+permissions: read-all
+
+jobs:
+  scorecard:
+    uses: Krister-Johansson/shared-configs/.github/workflows/scorecard.yml@{{SHARED_CONFIGS_SHA}} # {{SHARED_CONFIGS_VERSION}}
+    permissions:
+      security-events: write # SARIF upload to code scanning
+      id-token: write # publish results to the OpenSSF API (badge)
+    secrets:
+      SCORECARD_TOKEN: ${{ secrets.SCORECARD_TOKEN }}

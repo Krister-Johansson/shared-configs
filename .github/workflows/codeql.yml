@@ -1,0 +1,38 @@
+# Reusable CodeQL static analysis.
+#
+# The schedule trigger lives in the CALLER workflow (cron cannot be defined in a
+# reusable workflow) — see templates/workflows/codeql.yml.
+name: CodeQL
+
+on:
+  workflow_call:
+    inputs:
+      languages:
+        description: "CodeQL language matrix value"
+        type: string
+        default: "javascript-typescript"
+
+# Least-privilege default; the analyze job adds only the write scope it needs.
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ inputs.languages }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write # upload results to code scanning
+      actions: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          languages: ${{ inputs.languages }}
+      # No build step: CodeQL analyzes JS/TS sources directly.
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@8aad20d150bbac5944a9f9d289da16a4b0d87c1e # v4.36.2
+        with:
+          category: "/language:${{ inputs.languages }}"

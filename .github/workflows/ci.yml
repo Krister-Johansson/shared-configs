@@ -1,0 +1,112 @@
+# Reusable CI for Node/TypeScript packages.
+#
+# Call from a consumer repo (see templates/workflows/ci.yml):
+#   jobs:
+#     ci:
+#       uses: Krister-Johansson/shared-configs/.github/workflows/ci.yml@<sha> # vX.Y.Z
+#
+# The repo must define these npm scripts: build, typecheck, coverage
+# (plus lint when run-lint is true, and anything listed in post-test-scripts).
+name: CI
+
+on:
+  workflow_call:
+    inputs:
+      node-versions:
+        description: "JSON array of Node.js versions for the test matrix"
+        type: string
+        default: '["20", "22"]'
+      run-lint:
+        description: "Run `npm run lint` (the repo must define the script)"
+        type: boolean
+        default: false
+      post-test-scripts:
+        description: 'Space-separated npm scripts to run after coverage, e.g. "test:types attw"'
+        type: string
+        default: ""
+      upload-coverage-artifact:
+        description: "Upload coverage/ as an artifact named `coverage` (for PR coverage-comment jobs)"
+        type: boolean
+        default: false
+      require-issue-link:
+        description: "Fail PRs whose description does not reference an issue (Closes/Fixes/Resolves #N)"
+        type: boolean
+        default: true
+    secrets:
+      CODECOV_TOKEN:
+        description: "Codecov upload token (optional — upload is best-effort)"
+        required: false
+
+# Least-privilege default token; no job here needs write access.
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: build + test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ${{ fromJSON(inputs.node-versions) }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run typecheck
+      - if: inputs.run-lint
+        run: npm run lint
+      - run: npm run coverage
+      - name: Post-test scripts
+        if: inputs.post-test-scripts != ''
+        env:
+          POST_TEST_SCRIPTS: ${{ inputs.post-test-scripts }}
+        run: |
+          for script in $POST_TEST_SCRIPTS; do
+            npm run "$script"
+          done
+      - name: Upload coverage artifact
+        # First matrix entry only — one artifact is enough for a PR comment job.
+        if: inputs.upload-coverage-artifact && strategy.job-index == 0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage
+          path: coverage/
+          if-no-files-found: error
+      - name: Upload coverage to Codecov
+        if: strategy.job-index == 0
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          files: ./coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          # Best-effort: never fail CI on an upload hiccup or a not-yet-set token.
+          fail_ci_if_error: false
+
+  # Every PR must track a GitHub issue (issue-first workflow). Machine PRs
+  # (dependabot, release-please) are exempt. Skipped jobs count as passing
+  # for branch protection, so this is safe to require.
+  require-issue-link:
+    name: linked issue
+    if: >
+      inputs.require-issue-link &&
+      github.event_name == 'pull_request' &&
+      github.actor != 'dependabot[bot]' &&
+      !startsWith(github.event.pull_request.title, 'chore(main): release')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check that the PR closes an issue
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          if printf '%s' "$PR_BODY" | grep -qiE '(close[sd]?|fix(e[sd])?|resolve[sd]?):? +([a-z0-9._-]+/[a-z0-9._-]+)?#[0-9]+'; then
+            echo "PR references an issue."
+          else
+            echo "::error::Every PR must track a GitHub issue. Add 'Closes #<issue-number>' to the PR description."
+            exit 1
+          fi

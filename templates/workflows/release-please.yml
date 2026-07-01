@@ -1,0 +1,32 @@
+# Thin caller for the shared release-please + npm publish workflow.
+# Replace {{SHARED_CONFIGS_SHA}} / {{SHARED_CONFIGS_VERSION}} with the latest
+# shared-configs release (see AGENTS.md step 4).
+#
+# publish-strategy 'oidc' needs a one-time Trusted Publisher on npmjs.com
+# (Package → Settings → Trusted Publisher):
+#   Provider: GitHub Actions · Organization: Krister-Johansson
+#   Repository: <this repo> · Workflow filename: release-please.yml
+name: release-please
+
+on:
+  push:
+    branches: [main]
+  # Manual re-publish of the current version on main — e.g. when an auto-publish
+  # failed AFTER the GitHub release was created. Safe: npm publish fails harmlessly
+  # if the version is already on the registry.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    uses: Krister-Johansson/shared-configs/.github/workflows/release-please.yml@{{SHARED_CONFIGS_SHA}} # {{SHARED_CONFIGS_VERSION}}
+    permissions:
+      contents: write # release commits, tags, and the GitHub release
+      pull-requests: write # maintain the release PR
+      id-token: write # npm Trusted Publishing / provenance
+    with:
+      publish-strategy: oidc # or "npm-token" (then add the NPM_TOKEN secret)
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -1,0 +1,17 @@
+import tseslint from 'typescript-eslint';
+import unusedImports from 'eslint-plugin-unused-imports';
+import prettierRecommended from 'eslint-plugin-prettier/recommended';
+
+export default tseslint.config(
+  { ignores: ['dist'] },
+  ...tseslint.configs.recommended,
+  {
+    plugins: {
+      'unused-imports': unusedImports,
+    },
+    rules: {
+      'unused-imports/no-unused-imports': 'error',
+    },
+  },
+  prettierRecommended, // Must be last
+);

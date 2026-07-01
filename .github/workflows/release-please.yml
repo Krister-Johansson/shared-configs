@@ -1,0 +1,108 @@
+# Reusable release automation: release-please (manifest mode) + npm publish.
+#
+# Call from a consumer repo (see templates/workflows/release-please.yml). The consumer
+# repo must contain release-please-config.json and .release-please-manifest.json, and
+# the caller job must grant: contents: write, pull-requests: write, id-token: write.
+#
+# publish-strategy:
+#   oidc (default) — npm Trusted Publishing. No secret needed. One-time setup on
+#     npmjs.com (Package → Settings → Trusted Publisher): Provider "GitHub Actions",
+#     Organization = repo owner, Repository = repo name, Workflow filename = the
+#     CALLER workflow filename (release-please.yml). npm matches the caller repo and
+#     filename, so the reusable indirection does not change the setup.
+#   npm-token — classic granular NPM_TOKEN secret with --provenance. Publish steps
+#     skip silently while the secret is unset.
+name: release-please
+
+on:
+  workflow_call:
+    inputs:
+      publish-strategy:
+        description: "'oidc' (npm Trusted Publishing, default) or 'npm-token'"
+        type: string
+        default: "oidc"
+      publish-node-version:
+        description: "Node version for the publish job (Trusted Publishing needs >= 22.14)"
+        type: string
+        default: "24"
+    secrets:
+      NPM_TOKEN:
+        description: "Only used with publish-strategy: npm-token"
+        required: false
+
+# Least-privilege at the top level; each job elevates only what it needs
+# (and never beyond what the caller job granted).
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # release commits, tags, and the GitHub release
+      pull-requests: write # maintain the release PR
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          # Manifest mode: config in the CONSUMER repo's release-please-config.json +
+          # .release-please-manifest.json. Maintains a release PR that bumps the version
+          # and updates CHANGELOG.md from Conventional Commits; merging that PR creates
+          # the git tag + GitHub release.
+
+  # ── npm publish via Trusted Publishing (OIDC) — no NPM_TOKEN, provenance automatic.
+  # Runs after a release is created, or on a manual workflow_dispatch on main to
+  # re-publish (safe: npm publish fails harmlessly if the version already exists).
+  publish-oidc:
+    needs: release-please
+    if: ${{ inputs.publish-strategy == 'oidc' && (needs.release-please.outputs.release_created || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # OIDC token for Trusted Publishing
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ inputs.publish-node-version }}
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false # never cache in release builds
+      # Trusted Publishing requires npm >= 11.5.1; upgrade regardless of the bundled version.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      # prepublishOnly (build + tests) runs as the pre-publish gate.
+      - run: npm publish --access public
+
+  # ── npm publish via NPM_TOKEN secret. Steps skip while the secret is unset, so
+  # publishing stays off until the secret is added.
+  publish-npm-token:
+    needs: release-please
+    if: ${{ inputs.publish-strategy == 'npm-token' && (needs.release-please.outputs.release_created || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')) }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance (supply-chain attestation) via OIDC
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        if: env.NPM_TOKEN != ''
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        if: env.NPM_TOKEN != ''
+        with:
+          node-version: ${{ inputs.publish-node-version }}
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false
+      - run: npm ci
+        if: env.NPM_TOKEN != ''
+      - run: npm publish --provenance --access public
+        if: env.NPM_TOKEN != ''
+        env:
+          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}

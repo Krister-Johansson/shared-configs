@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Keep the SHA-pinned actions inside the reusable workflows current.
+  # Grouped into one PR/week to stay low-noise.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
