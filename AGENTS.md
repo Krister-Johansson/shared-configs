@@ -37,7 +37,7 @@ target repo:
 | --- | --- |
 | `templates/workflows/ci.yml` | `.github/workflows/ci.yml` |
 | `templates/workflows/release-please.yml` | `.github/workflows/release-please.yml` |
-| `templates/workflows/codeql.yml` | `.github/workflows/codeql.yml` |
+| `templates/workflows/codeql.yml` | `.github/workflows/codeql.yml` (see CodeQL note below) |
 | `templates/workflows/scorecard.yml` | `.github/workflows/scorecard.yml` |
 | `templates/github/dependabot.yml` | `.github/dependabot.yml` |
 | `templates/github/ISSUE_TEMPLATE/*` | `.github/ISSUE_TEMPLATE/` |
@@ -55,6 +55,16 @@ target repo:
 | `templates/prettierrc.json` | `.prettierrc` (only if adopting Prettier) |
 | `templates/eslint.config.js` | `eslint.config.js` (only if adopting ESLint) |
 | `templates/tsconfig.json` | `tsconfig.json` (starter for NEW repos only) |
+
+**CodeQL note**: skip `codeql.yml` if the repo uses CodeQL **default setup** —
+GitHub rejects advanced-configuration SARIF uploads while it's enabled (and
+default setup already covers JS/TS + Actions). Check first:
+
+```sh
+gh api repos/<owner>/<repo>/code-scanning/default-setup --jq .state
+# "configured" => default setup is on: do NOT copy codeql.yml
+# "not-configured" => copy codeql.yml
+```
 
 **[migrate]** Do not overwrite an existing tsconfig, eslint, or prettier config.
 Do not overwrite existing CONTRIBUTING/SECURITY if they contain repo-specific
