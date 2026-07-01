@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/Krister-Johansson/shared-configs/compare/v1.1.0...v1.1.1) (2026-07-01)
+
+
+### Bug Fixes
+
+* grant contents: read to the Scorecard job ([b94ae7b](https://github.com/Krister-Johansson/shared-configs/commit/b94ae7b67aed9a3295c96c7e4eec297f070e1496))
+* template header comments no longer embed the pin placeholders ([987f194](https://github.com/Krister-Johansson/shared-configs/commit/987f19425bf35067aef1c8425bd4e6546049e6f4))
+
 ## [1.1.0](https://github.com/Krister-Johansson/shared-configs/compare/v1.0.0...v1.1.0) (2026-07-01)
 
 
