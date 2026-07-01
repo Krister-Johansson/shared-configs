@@ -19,6 +19,14 @@ gh auth status                      # authenticated gh CLI
 gh repo view <owner/repo>           # target repo exists
 ```
 
+Allow GitHub Actions to create PRs (required by release-please; off by default
+on new repos):
+
+```sh
+gh api -X PUT repos/<owner/repo>/actions/permissions/workflow \
+  -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true
+```
+
 Determine the repo type — it changes a few steps below:
 
 - **package**: published to npm (has `"files"`/`"bin"`/`"exports"` and is meant
