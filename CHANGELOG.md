@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/Krister-Johansson/shared-configs/compare/v1.1.1...v1.1.2) (2026-07-01)
+
+
+### Bug Fixes
+
+* make setup-branch-protection.sh executable ([233f2a7](https://github.com/Krister-Johansson/shared-configs/commit/233f2a78f0103785afb5a1d760e61dcf1e0ee226))
+
 ## [1.1.1](https://github.com/Krister-Johansson/shared-configs/compare/v1.1.0...v1.1.1) (2026-07-01)
 
 
