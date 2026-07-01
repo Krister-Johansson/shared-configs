@@ -1,8 +1,9 @@
-# Reusable release automation: release-please (manifest mode) + npm publish.
+# Reusable release automation: release-please (manifest mode) + optional npm publish.
 #
 # Call from a consumer repo (see templates/workflows/release-please.yml). The consumer
 # repo must contain release-please-config.json and .release-please-manifest.json, and
-# the caller job must grant: contents: write, pull-requests: write, id-token: write.
+# the caller job must grant: contents: write, pull-requests: write (+ id-token: write
+# when publishing to npm).
 #
 # publish-strategy:
 #   oidc (default) — npm Trusted Publishing. No secret needed. One-time setup on
@@ -12,19 +13,41 @@
 #     filename, so the reusable indirection does not change the setup.
 #   npm-token — classic granular NPM_TOKEN secret with --provenance. Publish steps
 #     skip silently while the secret is unset.
+#   none — for services and frontend apps that don't publish a package.
+#     release-please still maintains versions, CHANGELOG.md, tags, and GitHub
+#     releases; chain deployments off this workflow's outputs in the caller:
+#
+#       jobs:
+#         release:
+#           uses: Krister-Johansson/shared-configs/.github/workflows/release-please.yml@...
+#           with: { publish-strategy: none }
+#         deploy:
+#           needs: release
+#           if: needs.release.outputs.release_created == 'true'
+#           ... # build image / trigger deploy for needs.release.outputs.tag_name
 name: release-please
 
 on:
   workflow_call:
     inputs:
       publish-strategy:
-        description: "'oidc' (npm Trusted Publishing, default) or 'npm-token'"
+        description: "'oidc' (npm Trusted Publishing, default), 'npm-token', or 'none' (services/frontends: release + changelog only)"
         type: string
         default: "oidc"
       publish-node-version:
         description: "Node version for the publish job (Trusted Publishing needs >= 22.14)"
         type: string
         default: "24"
+    outputs:
+      release_created:
+        description: "'true' when this run created a GitHub release"
+        value: ${{ jobs.release-please.outputs.release_created }}
+      tag_name:
+        description: "Tag of the created release (e.g. v1.2.3), empty otherwise"
+        value: ${{ jobs.release-please.outputs.tag_name }}
+      version:
+        description: "Version of the created release (e.g. 1.2.3), empty otherwise"
+        value: ${{ jobs.release-please.outputs.version }}
     secrets:
       NPM_TOKEN:
         description: "Only used with publish-strategy: npm-token"
@@ -43,6 +66,8 @@ jobs:
       pull-requests: write # maintain the release PR
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release

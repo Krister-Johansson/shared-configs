@@ -19,10 +19,19 @@ gh auth status                      # authenticated gh CLI
 gh repo view <owner/repo>           # target repo exists
 ```
 
-The target must be a Node/TypeScript package with these npm scripts in
+Determine the repo type — it changes a few steps below:
+
+- **package**: published to npm (has `"files"`/`"bin"`/`"exports"` and is meant
+  to be installed by others)
+- **service / frontend app**: deployed, not published
+
+The target must be a Node/TypeScript project with these npm scripts in
 package.json: `build`, `typecheck`, `test`, `coverage`. If any are missing, add
 them first (`coverage` = the test runner with coverage; vitest:
-`vitest run --coverage`, jest: `jest --coverage`). Also required:
+`vitest run --coverage`, jest: `jest --coverage`). For plain-JS repos without a
+`typecheck` script, set `run-typecheck: false` in the CI caller instead.
+
+**Packages only** — also required:
 
 ```json
 "prepublishOnly": "npm run build && npm test"
@@ -48,7 +57,7 @@ target repo:
 | `templates/codecov.yml` | `codecov.yml` |
 | `templates/socket.yml` | `socket.yml` |
 | `templates/gitignore` | `.gitignore` (merge if one exists) |
-| `templates/npmrc` | `.npmrc` |
+| `templates/npmrc` | `.npmrc` (packages only) |
 | `templates/CONTRIBUTING.md` | `CONTRIBUTING.md` |
 | `templates/SECURITY.md` | `SECURITY.md` |
 | `templates/AGENTS.md` | `AGENTS.md` |
@@ -107,10 +116,20 @@ uses: Krister-Johansson/shared-configs/.github/workflows/ci.yml@<sha> # v1.2.3
 Edit `.github/workflows/ci.yml` inputs to match the repo:
 
 - `run-lint: true` only if the repo has a `lint` script.
+- `run-typecheck: false` only for plain-JS repos without a `typecheck` script.
 - `post-test-scripts`: extra npm test scripts, e.g. `"test:types attw"`.
 - `upload-coverage-artifact: true` only if you add a local coverage-comment job.
 - Repo-specific jobs (integration tests, coverage comments) go in the same file
   as sibling jobs of `ci:`.
+
+And `.github/workflows/release-please.yml`:
+
+- **package**: keep `publish-strategy: oidc` (or `npm-token` if a secret-based
+  flow is required).
+- **service / frontend app**: set `publish-strategy: none` and uncomment/adapt
+  the `deploy` sibling job, gated on
+  `needs.release.outputs.release_created == 'true'` (outputs: `tag_name`,
+  `version`). release-please still manages versions, CHANGELOG, and releases.
 
 **[migrate]** Delete the old workflow files the callers replace. Keep any
 workflow that has no shared equivalent.
@@ -146,7 +165,8 @@ check names, run this only when the migration PR is ready to merge, then merge.
 
 Report these as a checklist; they need account access you don't have:
 
-1. **npm Trusted Publishing** (publish-strategy `oidc`, the default):
+1. **npm Trusted Publishing** (packages with publish-strategy `oidc` only —
+   skip for services/frontends):
    npmjs.com → package → Settings → Trusted Publisher:
    Provider `GitHub Actions`, Organization `Krister-Johansson`,
    Repository `<repo>`, Workflow filename `release-please.yml`.

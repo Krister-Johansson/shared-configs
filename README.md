@@ -95,6 +95,7 @@ Used by [gqlprune](https://github.com/Krister-Johansson/gqlprune) and
 | --- | --- | --- |
 | `node-versions` | `'["20", "22"]'` | JSON array for the test matrix |
 | `run-lint` | `false` | Run `npm run lint` |
+| `run-typecheck` | `true` | Run `npm run typecheck` (disable for plain-JS repos) |
 | `post-test-scripts` | `""` | Extra npm scripts after coverage, e.g. `"test:types attw"` |
 | `upload-coverage-artifact` | `false` | Upload `coverage/` artifact for PR comment jobs |
 | `require-issue-link` | `true` | Fail PRs that don't reference an issue (`Closes #N`) |
@@ -106,12 +107,25 @@ coverage comments) live as sibling jobs in the caller file.
 
 | Input | Default | Purpose |
 | --- | --- | --- |
-| `publish-strategy` | `"oidc"` | `oidc` = npm Trusted Publishing (recommended); `npm-token` = classic secret + `--provenance` |
+| `publish-strategy` | `"oidc"` | `oidc` = npm Trusted Publishing (packages, recommended); `npm-token` = classic secret + `--provenance`; `none` = services/frontends — releases + CHANGELOG only, no npm |
 | `publish-node-version` | `"24"` | Node for the publish job (Trusted Publishing needs >= 22.14) |
 
+| Output | Purpose |
+| --- | --- |
+| `release_created` | `'true'` when this run created a GitHub release |
+| `tag_name` / `version` | e.g. `v1.2.3` / `1.2.3` — chain deploy jobs off these |
+
 Secrets: `NPM_TOKEN` (only for `npm-token`). Caller job must grant
-`contents: write`, `pull-requests: write`, `id-token: write`. The consumer repo
-owns `release-please-config.json` + `.release-please-manifest.json`.
+`contents: write`, `pull-requests: write` (+ `id-token: write` when publishing
+to npm). The consumer repo owns `release-please-config.json` +
+`.release-please-manifest.json`.
+
+**Services and frontend apps**: use `publish-strategy: none` and add a `deploy`
+sibling job in the caller gated on
+`needs.release.outputs.release_created == 'true'` — see the commented example
+in [`templates/workflows/release-please.yml`](templates/workflows/release-please.yml).
+Everything else (CI, CodeQL, Scorecard, CodeRabbit, templates) applies to
+non-package repos unchanged; skip the npm Trusted Publisher and `.npmrc` steps.
 
 ### `scorecard.yml` / `codeql.yml`
 

@@ -47,4 +47,6 @@ wrong version bump.
 
 - Versions, tags, CHANGELOG.md, and GitHub releases are managed by release-please.
   Never bump `version` in package.json or edit CHANGELOG.md by hand.
-- npm publishing happens in CI after the release PR merges.
+- Publishing/deployment happens in CI after the release PR merges (npm publish
+  for packages; the deploy job in `.github/workflows/release-please.yml` for
+  services and frontend apps).
