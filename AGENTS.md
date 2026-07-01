@@ -152,22 +152,47 @@ git add -A && git commit -m "chore: adopt shared-configs reusable workflows and 
 gh pr create --title "chore: adopt shared-configs setup" --body "... Closes #<tracking-issue>"
 ```
 
-Wait for the PR checks. Expected check contexts (verify with `gh pr checks`):
-`ci / build + test (node 20)`, `ci / build + test (node 22)`, `ci / linked issue`,
-plus `CodeQL / codeql / Analyze (javascript-typescript)` on PRs.
+Wait for the PR checks and read the real contexts with `gh pr checks <pr>` —
+you need them for Step 6.
 
 ## Step 6 — Branch protection (after the PR checks have run once)
+
+**Required checks are repo-specific — derive them from the PR's actual check
+run, never copy a fixed list.** Rule of thumb: everything that verifies the
+code must gate the merge; informational checks must not.
+
+Include as required:
+
+- every `ci / build + test (node XX)` matrix job the repo runs
+- `ci / linked issue`
+- **every repo-specific test job** defined in the caller workflow — whatever
+  the repo has: `integration (...)`, e2e, smoke, browser/visual tests, etc.
+  If a test suite runs on PRs, it gates the merge.
+
+Do NOT require informational/asynchronous checks: `codecov/*`, `coverage
+comment`, CodeRabbit/Socket app checks, or scheduled-only workflows
+(Scorecard). CodeQL is optional — require it only if the human asks for a
+security gate.
+
+Then apply (example — substitute the contexts you actually collected):
 
 ```sh
 ./scripts/setup-branch-protection.sh <owner/repo> \
   "ci / build + test (node 20)" \
   "ci / build + test (node 22)" \
-  "ci / linked issue"
+  "ci / linked issue" \
+  "integration (real TimescaleDB)"   # repo-specific test jobs, if any
 ```
 
-Use the exact contexts from `gh pr checks` — add repo-specific ones (e.g.
-integration jobs). **[migrate]** If old branch protection required the previous
-check names, run this only when the migration PR is ready to merge, then merge.
+The script creates/updates a ruleset named `main-protection`. **[migrate]** If
+the repo has older rulesets or legacy branch protection with the previous check
+names, run this only when the migration PR is ready to merge, then delete the
+superseded ruleset (`gh api -X DELETE repos/<owner/repo>/rulesets/<id>`) and
+legacy protection (`gh api -X DELETE repos/<owner/repo>/branches/main/protection`)
+so only `main-protection` governs. Note: the ruleset enforces
+up-to-date-with-main, so update the PR branch before merging
+(`gh pr update-branch <pr>`); enabling repo auto-merge helps:
+`gh api -X PATCH repos/<owner/repo> -F allow_auto_merge=true`.
 
 ## Step 7 — Manual steps to hand back to the human
 
