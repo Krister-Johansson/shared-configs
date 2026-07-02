@@ -15,34 +15,32 @@ Used by [gqlprune](https://github.com/Krister-Johansson/gqlprune) and
 
 | Asset | Mechanism | Where |
 | --- | --- | --- |
-| CI, release-please + npm publish, Scorecard, CodeQL | Reusable workflows (`workflow_call`) — consumers keep ~15-line callers | [`.github/workflows/`](.github/workflows/) |
+| CI, release-please (+ npm publish or deploy chaining), Scorecard, CodeQL | Reusable workflows (`workflow_call`) — consumers keep ~15-line callers | [`.github/workflows/`](.github/workflows/) |
 | CodeRabbit review settings | One shared file, pulled via `remote_config.url` | [`.coderabbit.yaml`](.coderabbit.yaml) |
-| dependabot, release-please config, codecov, socket, lint/format/tsconfig, CONTRIBUTING, SECURITY, issue/PR templates, AGENTS.md | Copied per repo (GitHub has no remote include for these) | [`templates/`](templates/) |
+| Everything GitHub can't remote-include, organized as **common + profile** | Copied per repo | [`templates/`](templates/) |
 | Branch protection ruleset | Applied via `gh api` | [`scripts/setup-branch-protection.sh`](scripts/setup-branch-protection.sh) |
+
+## Repo profiles
+
+Every repo copies [`templates/common/`](templates/common/) plus **one** profile:
+
+| Profile | For | Caller specifics |
+| --- | --- | --- |
+| [`templates/package/`](templates/package/) | npm packages | `publish-strategy: oidc` (Trusted Publishing), `.npmrc` |
+| [`templates/service/`](templates/service/) | deployed backends/APIs | `publish-strategy: none`, skeleton `integration`/`docker-build` CI jobs, `deploy` job chained on release outputs |
+| [`templates/frontend/`](templates/frontend/) | deployed web apps | `publish-strategy: none`, skeleton Playwright `e2e` job, optional release-gated deploy |
+
+Repo-specific jobs stay in the caller files as sibling jobs — when the same job
+shape shows up in 2+ repos, it gets promoted into a shared reusable workflow
+here.
 
 ## Quick start (new or existing repo)
 
-1. **Copy the templates** to their destinations:
-
-   | Template | Destination |
-   | --- | --- |
-   | `templates/workflows/*.yml` | `.github/workflows/` |
-   | `templates/github/dependabot.yml` | `.github/dependabot.yml` |
-   | `templates/github/ISSUE_TEMPLATE/` | `.github/ISSUE_TEMPLATE/` |
-   | `templates/github/PULL_REQUEST_TEMPLATE.md` | `.github/PULL_REQUEST_TEMPLATE.md` |
-   | `templates/coderabbit.yaml` | `.coderabbit.yaml` |
-   | `templates/release-please-config.json` | `release-please-config.json` |
-   | `templates/release-please-manifest.json` | `.release-please-manifest.json` |
-   | `templates/codecov.yml` | `codecov.yml` |
-   | `templates/socket.yml` | `socket.yml` |
-   | `templates/gitignore` | `.gitignore` |
-   | `templates/npmrc` | `.npmrc` |
-   | `templates/prettierrc.json` | `.prettierrc` |
-   | `templates/eslint.config.js` | `eslint.config.js` |
-   | `templates/tsconfig.json` | `tsconfig.json` (starter — adapt) |
-   | `templates/CONTRIBUTING.md` | `CONTRIBUTING.md` |
-   | `templates/SECURITY.md` | `SECURITY.md` |
-   | `templates/AGENTS.md` | `AGENTS.md` |
+1. **Copy the templates**: everything from `templates/common/` plus your
+   profile directory (`templates/package/`, `templates/service/`, or
+   `templates/frontend/`) — destination mapping in [AGENTS.md](AGENTS.md)
+   step 1 (workflows go to `.github/workflows/`, `github/` to `.github/`,
+   dotfile templates get their leading dot).
 
 2. **Replace the placeholders** — `{{REPO_SLUG}}` (e.g. `Krister-Johansson/my-repo`),
    `{{PACKAGE_NAME}}`, `{{NODE_MIN}}`, `{{SCOPE_NOTES}}`, `{{CURRENT_VERSION}}`

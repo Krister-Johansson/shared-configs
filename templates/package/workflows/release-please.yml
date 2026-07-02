@@ -1,4 +1,4 @@
-# Thin caller for the shared release-please + npm publish workflow.
+# Thin caller for the shared release-please + npm publish workflow — package profile.
 # The actual jobs live in Krister-Johansson/shared-configs; dependabot keeps
 # the pinned version fresh (pin set per AGENTS.md step 3).
 #
@@ -25,20 +25,8 @@ jobs:
     permissions:
       contents: write # release commits, tags, and the GitHub release
       pull-requests: write # maintain the release PR
-      id-token: write # npm Trusted Publishing / provenance (not needed with "none")
+      id-token: write # npm Trusted Publishing / provenance
     with:
-      # oidc = npm Trusted Publishing (packages, default)
-      # npm-token = classic NPM_TOKEN secret (packages)
-      # none = services/frontends: versions, CHANGELOG, tags + GitHub releases only
-      publish-strategy: oidc
+      publish-strategy: oidc # or "npm-token" (then add the NPM_TOKEN secret)
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  # Services/frontends (publish-strategy: none): chain deployment off the release —
-  # e.g. build and push a Docker image, or trigger the hosting platform's deploy.
-  # deploy:
-  #   needs: release
-  #   if: needs.release.outputs.release_created == 'true'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - run: echo "deploy ${{ needs.release.outputs.tag_name }}"

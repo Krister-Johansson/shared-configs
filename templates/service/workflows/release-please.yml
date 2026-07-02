@@ -1,0 +1,43 @@
+# Thin caller for the shared release-please workflow — service profile.
+# The actual jobs live in Krister-Johansson/shared-configs; dependabot keeps
+# the pinned version fresh (pin set per AGENTS.md step 3).
+#
+# publish-strategy 'none': release-please still manages versions, CHANGELOG.md,
+# tags, and GitHub releases from Conventional Commits — deployment chains off
+# the outputs below instead of an npm publish.
+name: release-please
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    uses: Krister-Johansson/shared-configs/.github/workflows/release-please.yml@{{SHARED_CONFIGS_SHA}} # {{SHARED_CONFIGS_VERSION}}
+    permissions:
+      contents: write # release commits, tags, and the GitHub release
+      pull-requests: write # maintain the release PR
+    with:
+      publish-strategy: none
+
+  # Deploy on release — adapt to the platform (container registry + rollout,
+  # Fly/Render/Railway CLI, ...). If the deploy authenticates to a cloud via
+  # OIDC, add `id-token: write` to THIS job's permissions.
+  deploy:
+    needs: release
+    if: needs.release.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+      - name: Deploy
+        env:
+          TAG: ${{ needs.release.outputs.tag_name }}
+        run: |
+          echo "TODO: build and deploy $TAG (docker build/push, platform CLI, ...)"
+          exit 1 # remove once a real deploy is wired up

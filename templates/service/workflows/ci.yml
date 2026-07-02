@@ -1,0 +1,50 @@
+# Thin caller for the shared CI workflow — service profile.
+# The actual jobs live in Krister-Johansson/shared-configs; dependabot keeps
+# the pinned version fresh (pin set per AGENTS.md step 3).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: Krister-Johansson/shared-configs/.github/workflows/ci.yml@{{SHARED_CONFIGS_SHA}} # {{SHARED_CONFIGS_VERSION}}
+    with:
+      run-lint: false # set true when the repo has a `lint` script
+      # run-typecheck: false # only for plain-JS services
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # Services usually test against their real dependencies (DB, queue, ...) —
+  # uncomment and adapt. Testcontainers works on ubuntu-latest (Docker is
+  # preinstalled). Make this a required status check (AGENTS.md step 6).
+  # integration:
+  #   name: integration
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+  #       with:
+  #         persist-credentials: false
+  #     - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+  #       with:
+  #         node-version: 24
+  #         cache: npm
+  #     - run: npm ci
+  #     - run: npm run build
+  #     - run: npm run test:integration
+
+  # Verify the container image builds on every PR (cheap safety net if the
+  # service ships as a Docker image).
+  # docker-build:
+  #   name: docker build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+  #       with:
+  #         persist-credentials: false
+  #     - run: docker build -t service-ci-check .

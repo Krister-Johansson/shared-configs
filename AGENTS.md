@@ -27,11 +27,15 @@ gh api -X PUT repos/<owner/repo>/actions/permissions/workflow \
   -f default_workflow_permissions=read -F can_approve_pull_request_reviews=true
 ```
 
-Determine the repo type — it changes a few steps below:
+Determine the repo **profile** — it selects which template directory you copy
+from and changes a few steps below. If it's ambiguous, ask the human.
 
-- **package**: published to npm (has `"files"`/`"bin"`/`"exports"` and is meant
-  to be installed by others)
-- **service / frontend app**: deployed, not published
+- **package** (`templates/package/`): published to npm — has `"files"`/`"bin"`/
+  `"exports"` and is meant to be installed by others
+- **service** (`templates/service/`): deployed backend/API — often has a
+  Dockerfile, listens on a port, tests against real dependencies
+- **frontend** (`templates/frontend/`): deployed web app — Vite/Next/etc.,
+  often has e2e tests
 
 The target must be a Node/TypeScript project with these npm scripts in
 package.json: `build`, `typecheck`, `test`, `coverage`. If any are missing, add
@@ -45,33 +49,48 @@ them first (`coverage` = the test runner with coverage; vitest:
 "prepublishOnly": "npm run build && npm test"
 ```
 
-## Step 1 — Copy templates
+## Step 1 — Copy templates (common + profile)
 
-From a checkout of shared-configs, copy each template to its destination in the
-target repo:
+From a checkout of shared-configs, copy the **common** templates plus the
+**profile** directory chosen in Step 0.
+
+Common (every repo):
 
 | Source (this repo) | Destination (target repo) |
 | --- | --- |
-| `templates/workflows/ci.yml` | `.github/workflows/ci.yml` |
-| `templates/workflows/release-please.yml` | `.github/workflows/release-please.yml` |
-| `templates/workflows/codeql.yml` | `.github/workflows/codeql.yml` (see CodeQL note below) |
-| `templates/workflows/scorecard.yml` | `.github/workflows/scorecard.yml` |
-| `templates/github/dependabot.yml` | `.github/dependabot.yml` |
-| `templates/github/ISSUE_TEMPLATE/*` | `.github/ISSUE_TEMPLATE/` |
-| `templates/github/PULL_REQUEST_TEMPLATE.md` | `.github/PULL_REQUEST_TEMPLATE.md` |
-| `templates/coderabbit.yaml` | `.coderabbit.yaml` |
-| `templates/release-please-config.json` | `release-please-config.json` |
-| `templates/release-please-manifest.json` | `.release-please-manifest.json` |
-| `templates/codecov.yml` | `codecov.yml` |
-| `templates/socket.yml` | `socket.yml` |
-| `templates/gitignore` | `.gitignore` (merge if one exists) |
-| `templates/npmrc` | `.npmrc` (packages only) |
-| `templates/CONTRIBUTING.md` | `CONTRIBUTING.md` |
-| `templates/SECURITY.md` | `SECURITY.md` |
-| `templates/AGENTS.md` | `AGENTS.md` |
-| `templates/prettierrc.json` | `.prettierrc` (only if adopting Prettier) |
-| `templates/eslint.config.js` | `eslint.config.js` (only if adopting ESLint) |
-| `templates/tsconfig.json` | `tsconfig.json` (starter for NEW repos only) |
+| `templates/common/workflows/codeql.yml` | `.github/workflows/codeql.yml` (see CodeQL note below) |
+| `templates/common/workflows/scorecard.yml` | `.github/workflows/scorecard.yml` |
+| `templates/common/github/dependabot.yml` | `.github/dependabot.yml` |
+| `templates/common/github/ISSUE_TEMPLATE/*` | `.github/ISSUE_TEMPLATE/` |
+| `templates/common/github/PULL_REQUEST_TEMPLATE.md` | `.github/PULL_REQUEST_TEMPLATE.md` |
+| `templates/common/coderabbit.yaml` | `.coderabbit.yaml` |
+| `templates/common/release-please-config.json` | `release-please-config.json` |
+| `templates/common/release-please-manifest.json` | `.release-please-manifest.json` |
+| `templates/common/codecov.yml` | `codecov.yml` |
+| `templates/common/socket.yml` | `socket.yml` |
+| `templates/common/gitignore` | `.gitignore` (merge if one exists) |
+| `templates/common/CONTRIBUTING.md` | `CONTRIBUTING.md` |
+| `templates/common/SECURITY.md` | `SECURITY.md` |
+| `templates/common/AGENTS.md` | `AGENTS.md` |
+| `templates/common/prettierrc.json` | `.prettierrc` (only if adopting Prettier) |
+| `templates/common/eslint.config.js` | `eslint.config.js` (only if adopting ESLint) |
+| `templates/common/tsconfig.json` | `tsconfig.json` (starter for NEW repos only) |
+
+Profile (`<profile>` = `package`, `service`, or `frontend`):
+
+| Source (this repo) | Destination (target repo) |
+| --- | --- |
+| `templates/<profile>/workflows/ci.yml` | `.github/workflows/ci.yml` |
+| `templates/<profile>/workflows/release-please.yml` | `.github/workflows/release-please.yml` |
+| `templates/package/npmrc` | `.npmrc` (package profile only) |
+
+The profile callers differ where it matters: **package** publishes to npm
+(`publish-strategy: oidc`); **service** uses `publish-strategy: none` plus
+skeleton `integration`/`docker-build` CI jobs and a `deploy` job chained on the
+release outputs; **frontend** uses `none` plus a skeleton Playwright `e2e` job
+and an optional release-gated deploy. Uncomment and adapt the skeletons that
+apply; delete the ones that don't. The service profile's `deploy` job ships
+with `exit 1` — wire up a real deploy or remove the job before merging.
 
 **CodeQL note**: skip `codeql.yml` if the repo uses CodeQL **default setup** —
 GitHub rejects advanced-configuration SARIF uploads while it's enabled (and
