@@ -16,7 +16,11 @@ on:
         required: false
 
 # Least-privilege by default; the analysis job elevates only what it needs.
-permissions: read-all
+# NOTE: must be an explicit map, not the read-all shorthand — read-all on a
+# workflow involved in a reusable call makes the run fail at startup when the
+# job elevates to write scopes.
+permissions:
+  contents: read
 
 jobs:
   analysis:

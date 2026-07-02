@@ -17,8 +17,10 @@ on:
 
 # Least-privilege by default; the reusable workflow's job elevates what it needs.
 # Do NOT add top-level env/defaults/write permissions — the Scorecard publish API
-# rejects workflows that have them.
-permissions: read-all
+# rejects workflows that have them. Must be an explicit map, not the read-all
+# shorthand, or the reusable-workflow call fails at startup.
+permissions:
+  contents: read
 
 jobs:
   scorecard:
