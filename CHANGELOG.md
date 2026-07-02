@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/Krister-Johansson/shared-configs/compare/v1.1.2...v1.1.3) (2026-07-02)
+
+
+### Bug Fixes
+
+* scorecard workflows use an explicit permissions map, not read-all ([5180944](https://github.com/Krister-Johansson/shared-configs/commit/5180944935ccabd57842082dbfa9eee58a34c3a0))
+
 ## [1.1.2](https://github.com/Krister-Johansson/shared-configs/compare/v1.1.1...v1.1.2) (2026-07-01)
 
 
