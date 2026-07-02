@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/Krister-Johansson/shared-configs/compare/v1.1.3...v1.2.0) (2026-07-02)
+
+
+### Features
+
+* profile-based templates — package, service, and frontend ([1bf20f8](https://github.com/Krister-Johansson/shared-configs/commit/1bf20f83229f40b1cd7117962c2bf3444633c030))
+
 ## [1.1.3](https://github.com/Krister-Johansson/shared-configs/compare/v1.1.2...v1.1.3) (2026-07-02)
 
 
