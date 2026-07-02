@@ -209,9 +209,13 @@ names, run this only when the migration PR is ready to merge, then delete the
 superseded ruleset (`gh api -X DELETE repos/<owner/repo>/rulesets/<id>`) and
 legacy protection (`gh api -X DELETE repos/<owner/repo>/branches/main/protection`)
 so only `main-protection` governs. Note: the ruleset enforces
-up-to-date-with-main, so update the PR branch before merging
-(`gh pr update-branch <pr>`); enabling repo auto-merge helps:
-`gh api -X PATCH repos/<owner/repo> -F allow_auto_merge=true`.
+up-to-date-with-main, so keep the PR branch current with
+`gh pr update-branch <pr>`.
+
+**Never merge the PR yourself and never arm auto-merge.** CodeRabbit is not a
+required status check, so auto-merge can land the PR before its review
+completes. When checks are green and CodeRabbit's review is done, report the
+PR as ready — the human merges.
 
 ## Step 7 — Manual steps to hand back to the human
 
