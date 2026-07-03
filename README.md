@@ -92,6 +92,7 @@ here.
 | Input | Default | Purpose |
 | --- | --- | --- |
 | `node-versions` | `'["20", "22"]'` | JSON array for the test matrix |
+| `package-manager` | `"npm"` | `npm` or `pnpm`; pnpm repos must declare `packageManager` in package.json |
 | `run-lint` | `false` | Run `npm run lint` |
 | `run-typecheck` | `true` | Run `npm run typecheck` (disable for plain-JS repos) |
 | `post-test-scripts` | `""` | Extra npm scripts after coverage, e.g. `"test:types attw"` |
