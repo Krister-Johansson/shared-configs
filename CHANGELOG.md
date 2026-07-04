@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/Krister-Johansson/shared-configs/compare/v1.2.0...v1.3.0) (2026-07-03)
+
+
+### Features
+
+* **ci:** add package-manager input (npm|pnpm) to reusable CI ([23f46cc](https://github.com/Krister-Johansson/shared-configs/commit/23f46cc3cce634d98d5e280fac63d6e86d9321a5)), closes [#6](https://github.com/Krister-Johansson/shared-configs/issues/6)
+* **ci:** add package-manager input to reusable CI ([ba92170](https://github.com/Krister-Johansson/shared-configs/commit/ba92170e2fcbfe579d321288a996298b7bc840a7))
+
 ## [1.2.0](https://github.com/Krister-Johansson/shared-configs/compare/v1.1.3...v1.2.0) (2026-07-02)
 
 
