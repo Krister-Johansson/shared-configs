@@ -21,6 +21,10 @@ jobs:
     permissions:
       contents: write # release commits, tags, and the GitHub release
       pull-requests: write # maintain the release PR
+      # Never used with publish-strategy 'none', but the called workflow's
+      # (skipped) publish jobs declare it, and GitHub validates every job of a
+      # reusable workflow against the caller's grants at startup.
+      id-token: write
     with:
       publish-strategy: none
 
