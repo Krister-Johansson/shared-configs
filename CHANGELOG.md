@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/Krister-Johansson/shared-configs/compare/v1.3.0...v1.3.1) (2026-07-04)
+
+
+### Bug Fixes
+
+* **templates:** grant id-token to service/frontend release-please callers ([24327e3](https://github.com/Krister-Johansson/shared-configs/commit/24327e37026c395738130e1fa03af5102280d8f0))
+
 ## [1.3.0](https://github.com/Krister-Johansson/shared-configs/compare/v1.2.0...v1.3.0) (2026-07-03)
 
 
