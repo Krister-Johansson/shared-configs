@@ -52,6 +52,13 @@ on:
       NPM_TOKEN:
         description: "Only used with publish-strategy: npm-token"
         required: false
+      RELEASE_TOKEN:
+        description: >-
+          Optional PAT or GitHub App token for the release-please step. The
+          default GITHUB_TOKEN works, but GitHub suppresses workflow runs for
+          events it creates: CI never runs on the release PR and
+          release-published workflows never fire. A real token fixes both.
+        required: false
 
 # Least-privilege at the top level; each job elevates only what it needs
 # (and never beyond what the caller job granted).
@@ -72,7 +79,7 @@ jobs:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           # Manifest mode: config in the CONSUMER repo's release-please-config.json +
           # .release-please-manifest.json. Maintains a release PR that bumps the version
           # and updates CHANGELOG.md from Conventional Commits; merging that PR creates

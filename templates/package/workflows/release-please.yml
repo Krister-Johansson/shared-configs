@@ -30,3 +30,7 @@ jobs:
       publish-strategy: oidc # or "npm-token" (then add the NPM_TOKEN secret)
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # Optional: a fine-grained PAT (contents + pull-requests, read/write) stored
+      # as a repo secret. Lets CI run on release PRs and release-published
+      # workflows fire; without it those events are suppressed by GitHub.
+      # RELEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}

@@ -50,3 +50,8 @@ jobs:
   #       env:
   #         TAG: ${{ needs.release.outputs.tag_name }}
   #       run: echo "TODO: deploy $TAG"
+    # Optional: a fine-grained PAT (contents + pull-requests, read/write) stored
+    # as a repo secret. Lets CI run on release PRs and release-published
+    # workflows fire; without it those events are suppressed by GitHub.
+    # secrets:
+    #   RELEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}

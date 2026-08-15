@@ -45,3 +45,8 @@ jobs:
         run: |
           echo "TODO: build and deploy $TAG (docker build/push, platform CLI, ...)"
           exit 1 # remove once a real deploy is wired up
+    # Optional: a fine-grained PAT (contents + pull-requests, read/write) stored
+    # as a repo secret. Lets CI run on release PRs and release-published
+    # workflows fire; without it those events are suppressed by GitHub.
+    # secrets:
+    #   RELEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
